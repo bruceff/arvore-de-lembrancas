@@ -1,896 +1,907 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#050505">
-  <title>Árvore de Lembranças</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background: #050505;
-      color: #f5f1e9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      overflow: hidden;
-    }
-
-    #scene {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-    }
-
-    .vignette {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      background: radial-gradient(
-        ellipse at center,
-        transparent 25%,
-        rgba(0,0,0,.4) 65%,
-        #000 120%
-      );
-    }
-
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      padding: 27px 25px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      z-index: 5;
-      background: linear-gradient(#050505b8, transparent);
-    }
-
-    .brand {
-      font-size: 11px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: #c9b99b;
-    }
-
-    .brand span {
-      display: block;
-      margin-top: 7px;
-      font-size: 9px;
-      letter-spacing: 2px;
-      color: #777;
-    }
-
-    .counter {
-      color: #b5a78e;
-      font-size: 10px;
-      letter-spacing: 2px;
-    }
-
-    .intro {
-      position: fixed;
-      top: 17%;
-      width: 100%;
-      text-align: center;
-      z-index: 3;
-      pointer-events: none;
-    }
-
-    .eyebrow {
-      color: #b7a37e;
-      font-size: 9px;
-      letter-spacing: 5px;
-      text-transform: uppercase;
-      margin-bottom: 13px;
-    }
-
-    h1 {
-      font-family: Georgia, serif;
-      font-weight: 400;
-      font-size: clamp(30px, 7vw, 53px);
-      letter-spacing: -1px;
-    }
-
-    .subtitle {
-      margin-top: 12px;
-      color: #999;
-      font-family: Georgia, serif;
-      font-style: italic;
-      font-size: 14px;
-    }
-
-    .bottom {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 5;
-      padding: 20px 20px 30px;
-      text-align: center;
-      background: linear-gradient(transparent, #050505e8);
-      pointer-events: none;
-    }
-
-    .bottom button {
-      pointer-events: auto;
-    }
-
-    .hint {
-      font-size: 9px;
-      letter-spacing: 3px;
-      color: #aaa;
-      margin-bottom: 19px;
-      text-transform: uppercase;
-    }
-
-    .add-button {
-      border: 1px solid #8c7957;
-      color: #e6d5b4;
-      background: #17140f;
-      border-radius: 30px;
-      padding: 14px 24px;
-      font-size: 11px;
-      letter-spacing: 1px;
-      cursor: pointer;
-      transition: .3s;
-    }
-
-    .add-button:active {
-      transform: scale(.96);
-      background: #302515;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 20;
-      background: #000e;
-      backdrop-filter: blur(15px);
-      align-items: center;
-      justify-content: center;
-      padding: 25px;
-    }
-
-    .modal.open {
-      display: flex;
-    }
-
-    .modal-content {
-      width: 100%;
-      max-width: 390px;
-      border: 1px solid #554834;
-      background: #10100f;
-      padding: 25px;
-      text-align: center;
-      animation: appear .35s ease;
-    }
-
-    @keyframes appear {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .modal h2 {
-      font-family: Georgia, serif;
-      font-weight: 400;
-      font-size: 27px;
-      margin: 10px 0;
-    }
-
-    .modal p {
-      color: #aaa;
-      font-size: 13px;
-      line-height: 1.7;
-      margin-bottom: 20px;
-    }
-
-    .preview {
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      object-fit: cover;
-      display: block;
-      margin: 18px 0;
-      filter: grayscale(100%);
-      background: #222;
-    }
-
-    .field {
-      width: 100%;
-      margin: 7px 0;
-      padding: 13px;
-      background: #1b1a17;
-      border: 1px solid #393329;
-      color: white;
-      font-size: 13px;
-      border-radius: 0;
-    }
-
-    .field:focus {
-      outline: 1px solid #a58a5e;
-    }
-
-    .actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 15px;
-    }
-
-    .actions button {
-      padding: 12px 17px;
-      border: 1px solid #806b49;
-      color: #e8d8b8;
-      background: #201a11;
-      cursor: pointer;
-      font-size: 11px;
-    }
-
-    .actions .secondary {
-      background: transparent;
-      border-color: #444;
-      color: #aaa;
-    }
-
-    .file-label {
-      display: block;
-      padding: 14px;
-      margin: 12px 0;
-      border: 1px dashed #786647;
-      color: #c9b99b;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .file-label input {
-      display: none;
-    }
-
-    .notice {
-      position: fixed;
-      left: 20px;
-      right: 20px;
-      bottom: 100px;
-      z-index: 8;
-      text-align: center;
-      color: #b7a37e;
-      font-size: 11px;
-      pointer-events: none;
-    }
-
-    @media (max-height: 650px) {
-      .intro { top: 14%; }
-      h1 { font-size: 30px; }
-      .bottom { padding-bottom: 15px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050505">
+<title>Árvore de Lembranças</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{color-scheme:dark;--gold:#c9b99b;--line:#554834;--panel:#10100f}
+body{background:#050505;color:#f5f1e9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+#scene{position:fixed;inset:0;z-index:0}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 25%,rgba(0,0,0,.4) 65%,#000 120%)}
+header{position:fixed;top:0;left:0;right:0;padding:27px 25px;display:flex;align-items:center;justify-content:space-between;z-index:5;background:linear-gradient(#050505b8,transparent);gap:12px}
+.brand{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--gold)}
+.brand span{display:block;margin-top:7px;font-size:9px;letter-spacing:2px;color:#777}
+.counter{color:#b5a78e;font-size:10px;letter-spacing:2px;text-align:right}
+.intro{position:fixed;top:17%;width:100%;text-align:center;z-index:3;pointer-events:none;padding:0 14px}
+.eyebrow{color:#b7a37e;font-size:9px;letter-spacing:5px;text-transform:uppercase;margin-bottom:13px}
+h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(30px,7vw,53px);letter-spacing:-1px}
+.subtitle{margin-top:12px;color:#999;font-family:Georgia,serif;font-style:italic;font-size:14px}
+.bottom{position:fixed;bottom:0;left:0;right:0;z-index:5;padding:20px 20px max(30px,env(safe-area-inset-bottom));text-align:center;background:linear-gradient(transparent,#050505e8);pointer-events:none}
+.bottom button{pointer-events:auto}
+.hint{font-size:9px;letter-spacing:3px;color:#aaa;margin-bottom:19px;text-transform:uppercase}
+button{font-family:inherit}
+.add-button,.primary{border:1px solid #8c7957;color:#e6d5b4;background:#17140f;border-radius:30px;padding:14px 24px;font-size:11px;letter-spacing:1px;cursor:pointer;transition:.2s}
+.add-button:active,.primary:active{transform:scale(.97);background:#302515}
+.modal{display:none;position:fixed;inset:0;z-index:20;background:#000e;backdrop-filter:blur(15px);align-items:center;justify-content:center;padding:18px;overflow:auto}
+.modal.open{display:flex}
+.modal-content{width:100%;max-width:410px;max-height:92dvh;overflow:auto;border:1px solid var(--line);background:var(--panel);padding:25px;text-align:center;animation:appear .3s ease}
+@keyframes appear{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.modal h2{font-family:Georgia,serif;font-weight:400;font-size:27px;margin:10px 0}
+.modal p{color:#aaa;font-size:13px;line-height:1.7;margin-bottom:15px}
+.preview{width:100%;max-height:35vh;aspect-ratio:4/3;object-fit:contain;display:block;margin:18px 0;background:#222}
+.field{width:100%;margin:7px 0;padding:13px;background:#1b1a17;border:1px solid #393329;color:white;font-size:14px;border-radius:0}
+.field:focus{outline:1px solid #a58a5e}
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:15px}
+.actions button{padding:12px 17px;border:1px solid #806b49;color:#e8d8b8;background:#201a11;cursor:pointer;font-size:11px}
+.actions .secondary{background:transparent;border-color:#444;color:#aaa}
+.file-label{display:block;padding:14px;margin:12px 0;border:1px dashed #786647;color:#c9b99b;font-size:12px;cursor:pointer}
+.file-label input{display:block;width:100%;margin-top:10px;font-size:12px}
+.notice{position:fixed;left:20px;right:20px;bottom:105px;z-index:8;text-align:center;color:#d0b98e;font-size:11px;pointer-events:none;text-shadow:0 1px 4px #000}
+.status{min-height:18px;color:#d4bd94;font-size:12px;line-height:1.5;margin-top:10px;overflow-wrap:anywhere}
+.small{font-size:11px!important;color:#888!important}
+.top-actions{display:flex;gap:7px;align-items:center}
+.tiny-button{background:#17140f;color:#c9b99b;border:1px solid #554834;padding:8px 10px;font-size:10px;border-radius:20px}
+.hidden{display:none!important}
+@media(max-height:650px){
+.intro{top:13%}
+.intro .subtitle{margin-top:6px}
+h1{font-size:30px}
+.bottom{padding-bottom:15px}
+.hint{margin-bottom:10px}
+.modal-content{padding:18px}
+}
+</style>
 </head>
-
 <body>
 
-  <div id="scene"></div>
-  <div class="vignette"></div>
+<div id="scene"></div>
+<div class="vignette"></div>
 
-  <header>
-    <div class="brand">
-      MEMÓRIAS
-      <span>UM JARDIM DE HISTÓRIAS</span>
-    </div>
-    <div class="counter" id="counter">00 MEMÓRIAS</div>
-  </header>
-
-  <section class="intro">
-    <div class="eyebrow">Tudo o que vivemos</div>
-    <h1>Nossa História</h1>
-    <p class="subtitle">Alguns momentos merecem viver para sempre.</p>
-  </section>
-
-  <div class="notice" id="notice">
-    Toque nas fotografias para descobrir uma lembrança.
+<header>
+  <div class="brand">
+    MEMÓRIAS
+    <span>UM JARDIM DE HISTÓRIAS</span>
   </div>
+  <div style="text-align:right">
+    <div class="counter" id="counter">0 MEMÓRIAS</div>
+    <div class="top-actions" style="margin-top:8px;justify-content:flex-end">
+      <button class="tiny-button" id="accountButton">Entrar</button>
+    </div>
+  </div>
+</header>
 
-  <section class="bottom">
-    <div class="hint">✦ &nbsp; Toque e arraste para explorar &nbsp; ✦</div>
-    <button class="add-button" id="openAdd">
-      + &nbsp; GUARDAR UMA LEMBRANÇA
-    </button>
-  </section>
+<section class="intro">
+  <div class="eyebrow">Tudo o que vivemos</div>
+  <h1 id="pageTitle">Nossa História</h1>
+  <p class="subtitle">Alguns momentos merecem viver para sempre.</p>
+</section>
 
-  <div class="modal" id="memoryModal">
-    <div class="modal-content">
-      <div class="eyebrow">Um instante no tempo</div>
-      <h2 id="memoryTitle">Nossa lembrança</h2>
-      <img id="memoryImage" class="preview" alt="Fotografia da lembrança">
-      <p id="memoryDescription"></p>
-      <p id="memoryDate"></p>
+<div class="notice" id="notice">
+  Entre na sua conta para carregar suas lembranças privadas.
+</div>
+
+<section class="bottom">
+  <div class="hint">✦ &nbsp; Toque e arraste para explorar &nbsp; ✦</div>
+  <button class="add-button" id="openAdd">+ &nbsp; GUARDAR UMA LEMBRANÇA</button>
+</section>
+
+<div class="modal" id="authModal">
+  <div class="modal-content">
+    <div class="eyebrow">Nosso espaço privado</div>
+    <h2 id="authHeading">Entrar na sua história</h2>
+    <p>Suas lembranças ficam disponíveis apenas para participantes autorizados.</p>
+
+    <form id="authForm">
+      <input class="field" id="emailInput" type="email" placeholder="Seu e-mail" autocomplete="email" required>
+      <input class="field" id="passwordInput" type="password" placeholder="Senha (mínimo de 6 caracteres)" autocomplete="current-password" minlength="6" required>
+
       <div class="actions">
-        <button id="closeMemory" class="secondary">Voltar à árvore</button>
+        <button class="primary" type="submit" id="authSubmit">Entrar</button>
+        <button type="button" class="secondary" id="switchAuth">Criar conta</button>
+        <button type="button" class="secondary" id="closeAuth">Fechar</button>
       </div>
+    </form>
+
+    <div class="status" id="authStatus" role="status"></div>
+    <p class="small">Se a confirmação de e-mail estiver ativada, confira sua caixa de entrada após o cadastro.</p>
+  </div>
+</div>
+
+<div class="modal" id="memoryModal">
+  <div class="modal-content">
+    <div class="eyebrow">Um instante no tempo</div>
+    <h2 id="memoryTitle">Nossa lembrança</h2>
+    <img id="memoryImage" class="preview hidden" alt="Mídia da lembrança">
+    <video id="memoryVideo" class="preview hidden" controls playsinline></video>
+    <p id="memoryDescription"></p>
+    <p id="memoryDate"></p>
+    <div class="actions">
+      <button id="closeMemory" class="secondary">Voltar à árvore</button>
     </div>
   </div>
+</div>
 
-  <div class="modal" id="addModal">
-    <div class="modal-content">
-      <div class="eyebrow">Uma nova página da nossa história</div>
-      <h2>Guardar momento</h2>
-      <p>Todo grande galho começa com uma pequena lembrança.</p>
+<div class="modal" id="addModal">
+  <div class="modal-content">
+    <div class="eyebrow">Uma nova página da nossa história</div>
+    <h2>Guardar momento</h2>
+    <p>Todo grande galho começa com uma pequena lembrança.</p>
 
-      <form id="memoryForm">
-        <input class="field" id="titleInput"
-          placeholder="Nome da aventura" maxlength="80" required>
+    <form id="memoryForm">
+      <input class="field" id="titleInput" placeholder="Nome da aventura" maxlength="80" required>
+      <textarea class="field" id="descriptionInput" placeholder="Conte a história desse momento..." rows="3" maxlength="500"></textarea>
+      <input class="field" id="dateInput" type="date">
 
-        <textarea class="field" id="descriptionInput"
-          placeholder="Conte a história desse momento..."
-          rows="3" maxlength="500"></textarea>
+      <label class="file-label">
+        Escolher fotografia ou vídeo
+        <input id="fileInput" type="file" accept="image/*,video/*" required>
+      </label>
 
-        <input class="field" id="dateInput" type="date">
+      <div id="fileStatus" class="status"></div>
 
-        <label class="file-label">
-          Escolher fotografia ou vídeo
-          <input id="fileInput" type="file"
-            accept="image/*,video/*">
-        </label>
+      <div class="actions">
+        <button class="primary" type="submit" id="saveMemoryButton">Guardar na árvore</button>
+        <button type="button" class="secondary" id="cancelAdd">Cancelar</button>
+      </div>
+    </form>
 
-        <div id="fileStatus" style="font-size:11px;color:#999"></div>
-
-        <div class="actions">
-          <button type="submit">Guardar na árvore</button>
-          <button type="button" class="secondary" id="cancelAdd">
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
+    <div class="status" id="saveStatus" role="status"></div>
   </div>
+</div>
 
-  <script type="module">
-    import * as THREE from
-      'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+<div class="modal" id="treeModal">
+  <div class="modal-content">
+    <div class="eyebrow">Começo de uma história</div>
+    <h2>Criar nossa árvore</h2>
+    <p>Dê um nome para este espaço privado. Você poderá convidar outras pessoas depois.</p>
 
-    const host = document.getElementById('scene');
+    <form id="treeForm">
+      <input class="field" id="treeNameInput" maxlength="80" placeholder="Ex.: Nossa História" required>
+      <div class="actions">
+        <button class="primary" type="submit">Criar árvore</button>
+        <button class="secondary" type="button" id="cancelTree">Agora não</button>
+      </div>
+    </form>
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x050505);
-    scene.fog = new THREE.FogExp2(0x050505, 0.035);
+    <div class="status" id="treeStatus"></div>
+  </div>
+</div>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-    const camera = new THREE.PerspectiveCamera(
-      42, innerWidth / innerHeight, 0.1, 100
-    );
-    camera.position.set(0, 1.1, 12.5);
-    camera.lookAt(0, 2.2, 0);
+const SUPABASE_URL = 'https://vdihzbafrpbfukmajlcn.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_SZleYEhYVIxAZanXeEgaiQ_tKnlvwoV';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: false
-    });
+const $ = id => document.getElementById(id);
+const openModal = id => $(id).classList.add('open');
+const closeModal = id => $(id).classList.remove('open');
 
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
-    renderer.setSize(innerWidth, innerHeight);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.5;
-    host.appendChild(renderer.domElement);
+let currentUser = null;
+let currentTree = null;
+let memories = [];
+let creatingAccount = false;
+let renderer, scene, camera, treeGroup;
+let photoCards = [];
+let animationId = null;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+function status(id, message, error = false) {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = message;
+  el.style.color = error ? '#ff7777' : '#d4bd94';
+}
 
-    const goldLight = new THREE.PointLight(0xffc875, 45, 13);
-    goldLight.position.set(0, 3.5, 0);
-    scene.add(goldLight);
+function escapeHTML(value = '') {
+  return String(value).replace(/[&<>"']/g, char => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;',
+    '"':'&quot;', "'":'&#39;'
+  })[char]);
+}
 
-    const backLight = new THREE.PointLight(0x5a8a80, 25, 15);
-    backLight.position.set(0, 4, -3);
-    scene.add(backLight);
+function showNotice(message) {
+  $('notice').textContent = message;
+}
 
-    const tree = new THREE.Group();
-    scene.add(tree);
+function updateCounter() {
+  $('counter').textContent =
+    `${memories.length} ${memories.length === 1 ? 'LEMBRANÇA' : 'MEMÓRIAS'}`;
+}
 
-    const bark = new THREE.MeshStandardMaterial({
-      color: 0x45372a,
-      roughness: 0.85
-    });
+function refreshHeader() {
+  $('accountButton').textContent = currentUser
+    ? 'Minha conta'
+    : 'Entrar';
+  $('pageTitle').textContent = currentTree?.name || 'Nossa História';
+  $('openAdd').textContent = currentUser
+    ? '+  GUARDAR UMA LEMBRANÇA'
+    : 'ENTRAR PARA GUARDAR LEMBRANÇAS';
+}
 
-    const darkBark = new THREE.MeshStandardMaterial({
-      color: 0x29231d,
-      roughness: 0.9
-    });
+function openAuth() {
+  status('authStatus', '');
+  openModal('authModal');
+}
 
-    function branch(start, end, radius, material = bark) {
-      const a = new THREE.Vector3(...start);
-      const b = new THREE.Vector3(...end);
-      const direction = new THREE.Vector3().subVectors(b, a);
-      const geometry = new THREE.CylinderGeometry(
-        radius * 0.45, radius, direction.length(), 7
-      );
+$('accountButton').addEventListener('click', () => {
+  if (currentUser) {
+    const leave = confirm('Deseja sair da sua conta?');
+    if (leave) supabase.auth.signOut();
+  } else {
+    openAuth();
+  }
+});
 
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.copy(a).add(b).multiplyScalar(0.5);
-      mesh.quaternion.setFromUnitVectors(
-        new THREE.Vector3(0, 1, 0),
-        direction.normalize()
-      );
+$('closeAuth').addEventListener('click', () => closeModal('authModal'));
 
-      tree.add(mesh);
-    }
+$('switchAuth').addEventListener('click', () => {
+  creatingAccount = !creatingAccount;
+  $('authHeading').textContent = creatingAccount
+    ? 'Criar minha conta'
+    : 'Entrar na sua história';
+  $('authSubmit').textContent = creatingAccount
+    ? 'Criar conta'
+    : 'Entrar';
+  $('switchAuth').textContent = creatingAccount
+    ? 'Já tenho conta'
+    : 'Criar conta';
+  $('passwordInput').autocomplete = creatingAccount
+    ? 'new-password'
+    : 'current-password';
+  status('authStatus', '');
+});
 
-    // Tronco principal
-    branch([0, -2.2, 0], [0.15, 0.1, 0], 0.43);
-    branch([0.15, 0.1, 0], [-0.15, 1.5, 0], 0.32);
-    branch([-0.15, 1.5, 0], [0.1, 2.8, 0], 0.24);
-    branch([0.1, 2.8, 0], [-0.1, 4, 0], 0.15);
-    branch([-0.1, 4, 0], [0.35, 4.9, 0], 0.09);
+$('authForm').addEventListener('submit', async event => {
+  event.preventDefault();
 
-    // Galhos secundários
-    const limbs = [
-      [[0,0.3,0],[1.1,1.1,0.1],0.22],
-      [[1.1,1.1,0.1],[2.1,1.5,0],0.14],
-      [[1.1,1.1,0.1],[1.4,2.2,-0.2],0.11],
-      [[-0.1,0.6,0],[-1.1,1.3,0.2],0.2],
-      [[-1.1,1.3,0.2],[-2,1.7,0],0.12],
-      [[-1.1,1.3,0.2],[-1.5,2.4,-0.1],0.1],
-      [[-0.15,1.5,0],[0.9,2.5,0.1],0.17],
-      [[0.9,2.5,0.1],[1.8,3,0],0.1],
-      [[0.9,2.5,0.1],[0.7,3.4,-0.2],0.09],
-      [[0.1,2.8,0],[-0.8,3.5,0.1],0.13],
-      [[-0.8,3.5,0.1],[-1.5,4,0],0.08],
-      [[-0.8,3.5,0.1],[-0.5,4.4,0],0.07],
-      [[-0.1,4,0],[0.9,4.4,0.1],0.08],
-      [[0.9,4.4,0.1],[1.4,4.7,0],0.05],
-      [[0.15,0,0],[0.7,-0.7,0.2],0.17],
-      [[0.7,-0.7,0.2],[1.6,-1.1,0],0.1],
-      [[0,-0.2,0],[-0.8,-0.8,0],0.16],
-      [[-0.8,-0.8,0],[-1.6,-1.1,0.1],0.08]
-    ];
+  const email = $('emailInput').value.trim();
+  const password = $('passwordInput').value;
 
-    limbs.forEach(l => branch(...l, darkBark));
+  $('authSubmit').disabled = true;
+  status('authStatus', 'Conectando...');
 
-    // Folhas luminosas
-    const leaves = new THREE.Group();
-    tree.add(leaves);
-
-    const leafMaterials = [
-      new THREE.MeshStandardMaterial({
-        color: 0x665b3d,
-        emissive: 0x98703b,
-        emissiveIntensity: 0.7,
-        roughness: 0.65
-      }),
-      new THREE.MeshStandardMaterial({
-        color: 0x4c6553,
-        emissive: 0x294e38,
-        emissiveIntensity: 0.8,
-        roughness: 0.8
-      }),
-      new THREE.MeshStandardMaterial({
-        color: 0x9a8053,
-        emissive: 0xc99a4d,
-        emissiveIntensity: 1.2,
-        roughness: 0.5
-      })
-    ];
-
-    let seed = 19;
-
-    function random() {
-      seed = (seed * 16807) % 2147483647;
-      return (seed - 1) / 2147483646;
-    }
-
-    for (let i = 0; i < 270; i++) {
-      const angle = random() * Math.PI * 2;
-      const height = random() * 4.8;
-      const spread = Math.sin((height / 5.2) * Math.PI) * 2.1 + 0.2;
-
-      const x = Math.cos(angle) * spread * (0.3 + random() * 0.7);
-      const z = Math.sin(angle) * spread * 0.6;
-      const y = height - 0.3;
-
-      const geometry = new THREE.IcosahedronGeometry(
-        0.045 + random() * 0.085, 0
-      );
-
-      const leaf = new THREE.Mesh(
-        geometry,
-        leafMaterials[Math.floor(random() * leafMaterials.length)]
-      );
-
-      leaf.position.set(x, y, z);
-      leaf.rotation.set(random() * 3, random() * 3, random() * 3);
-      leaf.userData.phase = random() * Math.PI * 2;
-      leaves.add(leaf);
-    }
-
-    // Chão escuro
-    const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(5, 64),
-      new THREE.MeshBasicMaterial({
-        color: 0x080907,
-        transparent: true,
-        opacity: 0.8
-      })
-    );
-
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -2.25;
-    scene.add(ground);
-
-    // Partículas suspensas
-    const dustGeometry = new THREE.BufferGeometry();
-    const dustPositions = [];
-
-    for (let i = 0; i < 500; i++) {
-      dustPositions.push(
-        (random() - 0.5) * 14,
-        random() * 9 - 2,
-        (random() - 0.5) * 8
-      );
-    }
-
-    dustGeometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(dustPositions, 3)
-    );
-
-    const dust = new THREE.Points(
-      dustGeometry,
-      new THREE.PointsMaterial({
-        color: 0xc5a777,
-        size: 0.025,
-        transparent: true,
-        opacity: 0.65
-      })
-    );
-
-    scene.add(dust);
-
-    // Fotografias nas órbitas
-    const photoGroup = new THREE.Group();
-    scene.add(photoGroup);
-
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-
-    let memories = [];
-    let photos = [];
-    let selectedFile = null;
-
-    const demoColors = [
-      ['#d8c6ad','#574a3c'],
-      ['#9caaa0','#394940'],
-      ['#d5c4b0','#766254'],
-      ['#b6b8b4','#424744'],
-      ['#c6ad8c','#68503d'],
-      ['#a8aaa3','#50534c']
-    ];
-
-    function makeDemoTexture(index) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 384;
-
-      const ctx = canvas.getContext('2d');
-      const colors = demoColors[index % demoColors.length];
-
-      const gradient = ctx.createLinearGradient(0, 0, 512, 384);
-      gradient.addColorStop(0, colors[0]);
-      gradient.addColorStop(1, colors[1]);
-
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 512, 384);
-
-      // Montanhas estilizadas
-      ctx.fillStyle = '#20231f';
-      ctx.beginPath();
-      ctx.moveTo(0, 300);
-      ctx.lineTo(110, 130);
-      ctx.lineTo(205, 270);
-      ctx.lineTo(315, 100);
-      ctx.lineTo(512, 290);
-      ctx.lineTo(512, 384);
-      ctx.lineTo(0, 384);
-      ctx.fill();
-
-      // Silhuetas
-      ctx.fillStyle = '#171915';
-      ctx.beginPath();
-      ctx.arc(256, 165, 36, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillRect(240, 198, 32, 105);
-
-      ctx.fillStyle = '#f3e5ce';
-      ctx.font = 'italic 23px Georgia';
-      ctx.textAlign = 'center';
-      ctx.fillText('um momento nosso', 256, 350);
-
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      return texture;
-    }
-
-    function removePhotos() {
-      for (const photo of photos) {
-        photoGroup.remove(photo);
-        photo.geometry.dispose();
-        photo.material.map?.dispose();
-        photo.material.dispose();
-      }
-      photos = [];
-    }
-
-    function rebuildPhotos() {
-      removePhotos();
-
-      const count = memories.length;
-      if (!count) return;
-
-      memories.forEach((memory, index) => {
-        const angle = (index / count) * Math.PI * 2;
-        const radius = count === 1 ? 2.6 : 3.2;
-        const y = 1.1 + Math.sin(angle * 2) * 0.65;
-
-        const geometry = new THREE.PlaneGeometry(1.05, 0.79);
-
-        let texture;
-
-        if (memory.url && memory.type === 'image') {
-          texture = new THREE.TextureLoader().load(memory.url);
-          texture.colorSpace = THREE.SRGBColorSpace;
-        } else {
-          texture = makeDemoTexture(index);
+  try {
+    if (creatingAccount) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.href.split('#')[0]
         }
-
-        const material = new THREE.MeshBasicMaterial({
-          map: texture,
-          side: THREE.DoubleSide
-        });
-
-        const card = new THREE.Mesh(geometry, material);
-
-        card.position.set(
-          Math.cos(angle) * radius,
-          y,
-          Math.sin(angle) * radius
-        );
-
-        card.lookAt(0, y, 0);
-        card.userData.memoryIndex = index;
-        card.userData.angle = angle;
-        photoGroup.add(card);
-        photos.push(card);
       });
 
-      document.getElementById('counter').textContent =
-        String(count).padStart(2, '0') + ' MEMÓRIAS';
-    }
+      if (error) throw error;
 
-    function showMemory(index) {
-      const memory = memories[index];
-      if (!memory) return;
-
-      document.getElementById('memoryTitle').textContent = memory.title;
-      document.getElementById('memoryDescription').textContent =
-        memory.description || 'Um momento guardado para sempre.';
-
-      document.getElementById('memoryDate').textContent =
-        memory.date ? new Date(memory.date + 'T12:00:00')
-          .toLocaleDateString('pt-BR') : '';
-
-      const image = document.getElementById('memoryImage');
-
-      if (memory.url) {
-        image.src = memory.url;
-        image.style.display = 'block';
+      if (data.session) {
+        status('authStatus', 'Conta criada! Carregando sua árvore...');
       } else {
-        image.src = '';
-        image.style.display = 'none';
+        status(
+          'authStatus',
+          'Conta criada! Confira seu e-mail para confirmar o cadastro.'
+        );
       }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (error) throw error;
 
-      document.getElementById('memoryModal').classList.add('open');
+      closeModal('authModal');
+      showNotice('Carregando suas lembranças...');
+    }
+  } catch (error) {
+    status('authStatus', error.message || 'Não foi possível entrar.', true);
+  } finally {
+    $('authSubmit').disabled = false;
+  }
+});
+
+async function loadUserData() {
+  const { data: { user } } = await supabase.auth.getUser();
+  currentUser = user || null;
+
+  if (!currentUser) {
+    currentTree = null;
+    memories = [];
+    updateCounter();
+    refreshHeader();
+    showNotice('Entre na sua conta para carregar suas lembranças privadas.');
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('tree_members')
+      .select('tree_id, role, trees(id, name, owner_id, level, experience)')
+      .eq('user_id', currentUser.id);
+
+    if (error) throw error;
+
+    const memberships = (data || [])
+      .map(item => ({
+        role: item.role,
+        tree: Array.isArray(item.trees) ? item.trees[0] : item.trees
+      }))
+      .filter(item => item.tree);
+
+    if (memberships.length === 0) {
+      currentTree = null;
+      memories = [];
+      refreshHeader();
+      updateCounter();
+      showNotice('Crie sua primeira árvore para começar a guardar lembranças.');
+      closeModal('authModal');
+      openModal('treeModal');
+      return;
     }
 
-    // Memórias demonstrativas
-    memories = [
-      {
-        title: 'A primeira aventura',
-        description: 'Toda história começa com um primeiro momento.',
-        date: '',
-        url: '',
-        type: 'demo'
-      },
-      {
-        title: 'Dias inesquecíveis',
-        description: 'Os pequenos momentos acabam se tornando os maiores.',
-        date: '',
-        url: '',
-        type: 'demo'
-      },
-      {
-        title: 'Nossa felicidade',
-        description: 'Uma lembrança para revisitar sempre que quisermos.',
-        date: '',
-        url: '',
-        type: 'demo'
-      },
-      {
-        title: 'Mais uma história',
-        description: 'Ainda temos tantas aventuras para viver.',
-        date: '',
-        url: '',
-        type: 'demo'
-      },
-      {
-        title: 'Momentos especiais',
-        description: 'Algumas coisas merecem ser guardadas para sempre.',
-        date: '',
-        url: '',
-        type: 'demo'
-      }
-    ];
+    const savedTreeId = localStorage.getItem('memory-tree-id');
+    const chosen = memberships.find(item => item.tree.id === savedTreeId)
+      || memberships[0];
 
-    rebuildPhotos();
+    currentTree = chosen.tree;
+    localStorage.setItem('memory-tree-id', currentTree.id);
 
-    // Arrastar a cena
-    let dragging = false;
-    let previousX = 0;
-    let previousY = 0;
-    let rotationVelocity = 0;
-    let touchMoved = false;
+    refreshHeader();
+    closeModal('authModal');
+    await loadMemories();
+  } catch (error) {
+    showNotice('Erro ao carregar sua árvore. Confira as permissões do Supabase.');
+    console.error(error);
+  }
+}
 
-    renderer.domElement.addEventListener('pointerdown', event => {
-      dragging = true;
-      touchMoved = false;
-      previousX = event.clientX;
-      previousY = event.clientY;
-      renderer.domElement.setPointerCapture(event.pointerId);
-    });
+async function createTree(name) {
+  if (!currentUser) {
+    openAuth();
+    return;
+  }
 
-    renderer.domElement.addEventListener('pointermove', event => {
-      if (!dragging) return;
+  status('treeStatus', 'Criando sua árvore...');
 
-      const dx = event.clientX - previousX;
-      const dy = event.clientY - previousY;
+  try {
+    const { data: tree, error } = await supabase
+      .from('trees')
+      .insert({
+        name,
+        owner_id: currentUser.id,
+        level: 1,
+        experience: 0
+      })
+      .select()
+      .single();
 
-      if (Math.abs(dx) + Math.abs(dy) > 2) touchMoved = true;
+    if (error) throw error;
 
-      rotationVelocity = dx * 0.004;
-      photoGroup.rotation.y += rotationVelocity;
-      tree.rotation.y += dx * 0.0015;
-
-      camera.position.y = THREE.MathUtils.clamp(
-        camera.position.y + dy * 0.008, 0, 3
-      );
-
-      previousX = event.clientX;
-      previousY = event.clientY;
-    });
-
-    renderer.domElement.addEventListener('pointerup', event => {
-      dragging = false;
-      if (renderer.domElement.hasPointerCapture(event.pointerId)) {
-        renderer.domElement.releasePointerCapture(event.pointerId);
-      }
-    });
-
-    renderer.domElement.addEventListener('pointercancel', () => {
-      dragging = false;
-    });
-
-    renderer.domElement.addEventListener('click', event => {
-      if (touchMoved) return;
-
-      const rect = renderer.domElement.getBoundingClientRect();
-
-      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-      raycaster.setFromCamera(pointer, camera);
-
-      const hits = raycaster.intersectObjects(photos);
-
-      if (hits.length) {
-        showMemory(hits[0].object.userData.memoryIndex);
-      }
-    });
-
-    // Modais
-    const memoryModal = document.getElementById('memoryModal');
-    const addModal = document.getElementById('addModal');
-
-    document.getElementById('closeMemory').onclick = () =>
-      memoryModal.classList.remove('open');
-
-    document.getElementById('openAdd').onclick = () =>
-      addModal.classList.add('open');
-
-    document.getElementById('cancelAdd').onclick = () =>
-      addModal.classList.remove('open');
-
-    document.getElementById('fileInput').onchange = event => {
-      selectedFile = event.target.files[0] || null;
-
-      document.getElementById('fileStatus').textContent =
-        selectedFile
-          ? selectedFile.name + ' (' +
-            (selectedFile.size / 1024 / 1024).toFixed(1) + ' MB)'
-          : '';
-    };
-
-    document.getElementById('memoryForm').onsubmit = event => {
-      event.preventDefault();
-
-      const title = document.getElementById('titleInput').value.trim();
-      if (!title) return;
-
-      const memory = {
-        title,
-        description:
-          document.getElementById('descriptionInput').value.trim(),
-        date: document.getElementById('dateInput').value,
-        url: '',
-        type: 'demo'
-      };
-
-      if (selectedFile) {
-        memory.url = URL.createObjectURL(selectedFile);
-        memory.type = selectedFile.type.startsWith('video/')
-          ? 'video'
-          : 'image';
-      }
-
-      memories.push(memory);
-      rebuildPhotos();
-
-      event.target.reset();
-      selectedFile = null;
-      document.getElementById('fileStatus').textContent = '';
-
-      addModal.classList.remove('open');
-
-      document.getElementById('notice').textContent =
-        'Sua nova lembrança apareceu na árvore.';
-    };
-
-    // Animação
-    const clock = new THREE.Clock();
-
-    function animate() {
-      requestAnimationFrame(animate);
-
-      const time = clock.getElapsedTime();
-
-      if (!dragging) {
-        photoGroup.rotation.y += 0.0009 + rotationVelocity * 0.94;
-        rotationVelocity *= 0.94;
-      }
-
-      leaves.children.forEach(leaf => {
-        leaf.position.y +=
-          Math.sin(time * 0.65 + leaf.userData.phase) * 0.0008;
+    const { error: memberError } = await supabase
+      .from('tree_members')
+      .insert({
+        tree_id: tree.id,
+        user_id: currentUser.id,
+        role: 'owner'
       });
 
-      dust.rotation.y = time * 0.009;
-      goldLight.intensity = 42 + Math.sin(time * 1.3) * 5;
+    if (memberError) throw memberError;
 
-      renderer.render(scene, camera);
+    currentTree = tree;
+    localStorage.setItem('memory-tree-id', tree.id);
+    closeModal('treeModal');
+    refreshHeader();
+    showNotice('Sua árvore nasceu! Guarde a primeira lembrança.');
+    await loadMemories();
+  } catch (error) {
+    status('treeStatus', error.message || 'Não foi possível criar a árvore.', true);
+  }
+}
+
+$('treeForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const name = $('treeNameInput').value.trim();
+  if (!name) return;
+  await createTree(name);
+});
+
+$('cancelTree').addEventListener('click', () => {
+  closeModal('treeModal');
+});
+
+async function loadMemories() {
+  if (!currentUser || !currentTree) return;
+
+  showNotice('Reunindo suas lembranças...');
+
+  try {
+    const { data, error } = await supabase
+      .from('memories')
+      .select('*')
+      .eq('tree_id', currentTree.id)
+      .order('memory_date', { ascending: true });
+
+    if (error) throw error;
+
+    memories = [];
+
+    for (const item of (data || [])) {
+      let mediaUrl = '';
+
+      if (item.storage_path) {
+        const { data: signed, error: signedError } = await supabase
+          .storage
+          .from('memory-media')
+          .createSignedUrl(item.storage_path, 3600);
+
+        if (!signedError && signed) {
+          mediaUrl = signed.signedUrl;
+        }
+      }
+
+      memories.push({
+        ...item,
+        mediaUrl
+      });
     }
 
-    animate();
+    updateCounter();
+    refreshHeader();
+    renderMemoryCards();
 
-    addEventListener('resize', () => {
-      camera.aspect = innerWidth / innerHeight;
-      camera.updateProjectionMatrix();
+    showNotice(memories.length
+      ? 'Arraste para explorar sua árvore de lembranças.'
+      : 'Sua árvore está pronta. Guarde a primeira lembrança!');
+  } catch (error) {
+    console.error(error);
+    showNotice('Não foi possível carregar as lembranças.');
+  }
+}
 
-      renderer.setSize(innerWidth, innerHeight);
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
+function renderMemoryCards() {
+  if (!treeGroup) return;
+
+  photoCards.forEach(card => treeGroup.remove(card));
+  photoCards = [];
+
+  const count = Math.max(memories.length, 1);
+
+  memories.forEach((memory, index) => {
+    const angle = index * 2.39996;
+    const radius = 2.0 + (index % 3) * 0.6;
+    const x = Math.cos(angle) * radius;
+    const y = 1.5 + (index % 5) * 0.7;
+    const z = Math.sin(angle) * radius;
+
+    const group = new THREE.Group();
+    group.position.set(x, y, z);
+
+    const card = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.9, 0.68),
+      new THREE.MeshBasicMaterial({
+        color: 0xc9b99b,
+        side: THREE.DoubleSide
+      })
+    );
+
+    card.userData.memory = memory;
+    group.add(card);
+    group.userData.memory = memory;
+
+    treeGroup.add(group);
+    photoCards.push(group);
+  });
+}
+
+$('openAdd').addEventListener('click', () => {
+  if (!currentUser) {
+    openAuth();
+    return;
+  }
+
+  if (!currentTree) {
+    openModal('treeModal');
+    return;
+  }
+
+  $('memoryForm').reset();
+  $('fileStatus').textContent = '';
+  $('saveStatus').textContent = '';
+  $('dateInput').value = new Date().toISOString().slice(0, 10);
+  openModal('addModal');
+});
+
+$('cancelAdd').addEventListener('click', () => closeModal('addModal'));
+
+$('fileInput').addEventListener('change', () => {
+  const file = $('fileInput').files[0];
+  if (!file) {
+    status('fileStatus', '');
+    return;
+  }
+
+  const limit = 50 * 1024 * 1024;
+
+  if (file.size > limit) {
+    $('fileInput').value = '';
+    status('fileStatus', 'O arquivo precisa ter até 50 MB.', true);
+    return;
+  }
+
+  if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+    $('fileInput').value = '';
+    status('fileStatus', 'Escolha uma imagem ou um vídeo.', true);
+    return;
+  }
+
+  status('fileStatus', `${file.name} — pronto para enviar.`);
+});
+
+$('memoryForm').addEventListener('submit', async event => {
+  event.preventDefault();
+
+  if (!currentUser || !currentTree) {
+    status('saveStatus', 'Entre e selecione uma árvore primeiro.', true);
+    return;
+  }
+
+  const file = $('fileInput').files[0];
+
+  if (!file) {
+    status('saveStatus', 'Escolha uma foto ou vídeo.', true);
+    return;
+  }
+
+  if (file.size > 50 * 1024 * 1024) {
+    status('saveStatus', 'O arquivo excede o limite de 50 MB.', true);
+    return;
+  }
+
+  const button = $('saveMemoryButton');
+  button.disabled = true;
+  status('saveStatus', 'Enviando sua lembrança...');
+
+  const extension = file.name.includes('.')
+    ? file.name.split('.').pop().toLowerCase()
+    : 'bin';
+
+  const path = `${currentTree.id}/${currentUser.id}/${crypto.randomUUID()}.${extension}`;
+
+  try {
+    const { error: uploadError } = await supabase.storage
+      .from('memory-media')
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type || undefined
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { error: insertError } = await supabase
+      .from('memories')
+      .insert({
+        tree_id: currentTree.id,
+        created_by: currentUser.id,
+        title: $('titleInput').value.trim(),
+        description: $('descriptionInput').value.trim(),
+        memory_date: $('dateInput').value || new Date().toISOString().slice(0, 10),
+        media_type: file.type.startsWith('video/') ? 'video' : 'photo',
+        storage_path: path,
+        experience_awarded: 10
+      });
+
+    if (insertError) {
+      await supabase.storage.from('memory-media').remove([path]);
+      throw insertError;
+    }
+
+    closeModal('addModal');
+    showNotice('Lembrança guardada com carinho. ✨');
+    await loadMemories();
+  } catch (error) {
+    console.error(error);
+    status('saveStatus', error.message || 'Erro ao salvar. Tente novamente.', true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$('closeMemory').addEventListener('click', () => {
+  $('memoryVideo').pause();
+  closeModal('memoryModal');
+});
+
+function showMemory(memory) {
+  $('memoryTitle').textContent = memory.title || 'Nossa lembrança';
+  $('memoryDescription').textContent = memory.description || '';
+  $('memoryDate').textContent = memory.memory_date || '';
+
+  $('memoryImage').classList.add('hidden');
+  $('memoryVideo').classList.add('hidden');
+  $('memoryImage').removeAttribute('src');
+  $('memoryVideo').removeAttribute('src');
+
+  if (memory.media_type === 'video') {
+    $('memoryVideo').src = memory.mediaUrl;
+    $('memoryVideo').classList.remove('hidden');
+  } else {
+    $('memoryImage').src = memory.mediaUrl;
+    $('memoryImage').classList.remove('hidden');
+  }
+
+  openModal('memoryModal');
+}
+
+$('scene').addEventListener('click', event => {
+  if (!camera || !renderer) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  const pointer = new THREE.Vector2(
+    ((event.clientX - rect.left) / rect.width) * 2 - 1,
+    -((event.clientY - rect.top) / rect.height) * 2 + 1
+  );
+
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(pointer, camera);
+
+  const hits = raycaster.intersectObjects(photoCards, true);
+
+  if (hits.length) {
+    const memory = hits[0].object.userData.memory
+      || hits[0].object.parent?.userData.memory;
+    if (memory) showMemory(memory);
+  }
+});
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  currentUser = session?.user || null;
+  setTimeout(() => loadUserData(), 0);
+});
+
+$('dateInput').value = new Date().toISOString().slice(0, 10);
+refreshHeader();
+  // ÁRVORE 3D
+function initTree() {
+  const container = $('scene');
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x050505);
+  scene.fog = new THREE.FogExp2(0x050505, 0.035);
+
+  camera = new THREE.PerspectiveCamera(
+    48,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+  );
+
+  camera.position.set(0, 3.5, 13);
+  camera.lookAt(0, 2.3, 0);
+
+  renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: false
+  });
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  container.appendChild(renderer.domElement);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 1.7));
+
+  const light = new THREE.PointLight(0xd7a65c, 90, 30);
+  light.position.set(3, 7, 5);
+  scene.add(light);
+
+  const redLight = new THREE.PointLight(0x8b1825, 45, 20);
+  redLight.position.set(-5, 3, -3);
+  scene.add(redLight);
+
+  treeGroup = new THREE.Group();
+  scene.add(treeGroup);
+
+  // Tronco
+  const trunkMaterial = new THREE.MeshStandardMaterial({
+    color: 0x35261a,
+    roughness: 0.9
+  });
+
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.48, 4.2, 10),
+    trunkMaterial
+  );
+
+  trunk.position.y = 1.9;
+  treeGroup.add(trunk);
+
+  // Galhos
+  for (let i = 0; i < 13; i++) {
+    const startY = 1.0 + i * 0.22;
+    const angle = i * 2.39996;
+    const length = 1.1 + (i % 4) * 0.25;
+
+    const branch = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.035, 0.11, length, 7),
+      trunkMaterial
+    );
+
+    branch.position.set(
+      Math.cos(angle) * length * 0.35,
+      startY + length * 0.35,
+      Math.sin(angle) * length * 0.35
+    );
+
+    branch.rotation.z = Math.cos(angle) * 0.8;
+    branch.rotation.x = Math.sin(angle) * 0.8;
+
+    treeGroup.add(branch);
+  }
+
+  // Folhas luminosas
+  const leafMaterials = [
+    new THREE.MeshStandardMaterial({
+      color: 0x78633c,
+      emissive: 0x30210b,
+      roughness: 0.65
+    }),
+    new THREE.MeshStandardMaterial({
+      color: 0x9c8150,
+      emissive: 0x453014,
+      roughness: 0.6
+    }),
+    new THREE.MeshStandardMaterial({
+      color: 0x5e2024,
+      emissive: 0x260509,
+      roughness: 0.7
+    })
+  ];
+
+  const leafGeometry = new THREE.IcosahedronGeometry(0.15, 1);
+
+  for (let i = 0; i < 170; i++) {
+    const angle = i * 2.39996;
+    const spread = 0.7 + (i % 7) * 0.2;
+    const height = 2.6 + ((i * 37) % 45) / 10;
+
+    const leaf = new THREE.Mesh(
+      leafGeometry,
+      leafMaterials[i % leafMaterials.length]
+    );
+
+    leaf.position.set(
+      Math.cos(angle) * spread * (0.6 + height * 0.25),
+      height,
+      Math.sin(angle) * spread * (0.6 + height * 0.25)
+    );
+
+    leaf.scale.set(
+      0.65 + Math.random() * 0.6,
+      0.7 + Math.random() * 0.8,
+      0.65 + Math.random() * 0.6
+    );
+
+    treeGroup.add(leaf);
+  }
+
+  // Partículas douradas
+  const particleCount = 450;
+  const positions = new Float32Array(particleCount * 3);
+
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 13;
+    positions[i * 3 + 1] = Math.random() * 9;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+  }
+
+  const particleGeometry = new THREE.BufferGeometry();
+  particleGeometry.setAttribute(
+    'position',
+    new THREE.BufferAttribute(positions, 3)
+  );
+
+  const particles = new THREE.Points(
+    particleGeometry,
+    new THREE.PointsMaterial({
+      color: 0xc9a86b,
+      size: 0.035,
+      transparent: true,
+      opacity: 0.75
+    })
+  );
+
+  scene.add(particles);
+
+  // Arrastar para girar a árvore
+  let dragging = false;
+  let previousX = 0;
+  let previousY = 0;
+  let rotationY = 0;
+  let rotationX = 0;
+
+  renderer.domElement.addEventListener('pointerdown', event => {
+    dragging = true;
+    previousX = event.clientX;
+    previousY = event.clientY;
+    renderer.domElement.setPointerCapture(event.pointerId);
+  });
+
+  renderer.domElement.addEventListener('pointermove', event => {
+    if (!dragging) return;
+
+    const dx = event.clientX - previousX;
+    const dy = event.clientY - previousY;
+
+    rotationY += dx * 0.005;
+    rotationX += dy * 0.002;
+
+    rotationX = Math.max(-0.35, Math.min(0.35, rotationX));
+
+    previousX = event.clientX;
+    previousY = event.clientY;
+  });
+
+  renderer.domElement.addEventListener('pointerup', () => {
+    dragging = false;
+  });
+
+  renderer.domElement.addEventListener('pointercancel', () => {
+    dragging = false;
+  });
+
+  function animate() {
+    animationId = requestAnimationFrame(animate);
+
+    if (!dragging) {
+      rotationY += 0.0015;
+    }
+
+    treeGroup.rotation.y +=
+      (rotationY - treeGroup.rotation.y) * 0.08;
+
+    treeGroup.rotation.x +=
+      (rotationX - treeGroup.rotation.x) * 0.08;
+
+    particles.rotation.y += 0.0004;
+
+    const time = performance.now() * 0.001;
+
+    treeGroup.children.forEach((child, index) => {
+      if (child.geometry?.type === 'IcosahedronGeometry') {
+        child.position.y += Math.sin(time + index) * 0.0008;
+      }
     });
 
-  </script>
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  window.addEventListener('resize', () => {
+    if (!camera || !renderer) return;
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  });
+}
+
+function showInitialState() {
+  refreshHeader();
+  updateCounter();
+  showNotice(
+    currentUser
+      ? 'Carregando suas lembranças...'
+      : 'Entre na sua conta para começar sua história.'
+  );
+}
+
+initTree();
+showInitialState();
+loadUserData();
+</script>
 </body>
 </html>
