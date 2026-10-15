@@ -43,16 +43,10 @@ button{font-family:inherit}
 .status{min-height:18px;color:#d4bd94;font-size:12px;line-height:1.5;margin-top:10px;overflow-wrap:anywhere}
 .small{font-size:11px!important;color:#888!important}
 .top-actions{display:flex;gap:7px;align-items:center}
-.tiny-button{background:#17140f;color:#c9b99b;border:1px solid #554834;padding:8px 10px;font-size:10px;border-radius:20px}
+.tiny-button{background:#17140f;color:#c9b99b;border:1px solid #554834;padding:8px 10px;font-size:10px;border-radius:20px;cursor:pointer}
 .hidden{display:none!important}
-@media(max-height:650px){
-.intro{top:13%}
-.intro .subtitle{margin-top:6px}
-h1{font-size:30px}
-.bottom{padding-bottom:15px}
-.hint{margin-bottom:10px}
-.modal-content{padding:18px}
-}
+@media(max-width:700px){header{padding:20px 15px}.brand{font-size:9px;letter-spacing:3px}.counter{font-size:9px}}
+@media(max-height:650px){.intro{top:13%}.intro .subtitle{margin-top:6px}h1{font-size:30px}.bottom{padding-bottom:15px}.hint{margin-bottom:10px}.modal-content{padding:18px}}
 </style>
 </head>
 <body>
@@ -61,13 +55,11 @@ h1{font-size:30px}
 <div class="vignette"></div>
 
 <header>
-  <div class="brand">
-    MEMÓRIAS
-    <span>UM JARDIM DE HISTÓRIAS</span>
-  </div>
+  <div class="brand">MEMÓRIAS<span>UM JARDIM DE HISTÓRIAS</span></div>
   <div style="text-align:right">
     <div class="counter" id="counter">0 MEMÓRIAS</div>
-    <div class="top-actions" style="margin-top:8px;justify-content:flex-end">
+    <div class="top-actions" style="margin-top:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="tiny-button hidden" id="inviteButton">Convidar</button>
       <button class="tiny-button" id="accountButton">Entrar</button>
     </div>
   </div>
@@ -79,15 +71,14 @@ h1{font-size:30px}
   <p class="subtitle">Alguns momentos merecem viver para sempre.</p>
 </section>
 
-<div class="notice" id="notice">
-  Entre na sua conta para carregar suas lembranças privadas.
-</div>
+<div class="notice" id="notice">Entre na sua conta para carregar suas lembranças privadas.</div>
 
 <section class="bottom">
   <div class="hint">✦ &nbsp; Toque e arraste para explorar &nbsp; ✦</div>
   <button class="add-button" id="openAdd">+ &nbsp; GUARDAR UMA LEMBRANÇA</button>
 </section>
 
+<!-- LOGIN E CADASTRO -->
 <div class="modal" id="authModal">
   <div class="modal-content">
     <div class="eyebrow">Nosso espaço privado</div>
@@ -97,7 +88,6 @@ h1{font-size:30px}
     <form id="authForm">
       <input class="field" id="emailInput" type="email" placeholder="Seu e-mail" autocomplete="email" required>
       <input class="field" id="passwordInput" type="password" placeholder="Senha (mínimo de 6 caracteres)" autocomplete="current-password" minlength="6" required>
-
       <div class="actions">
         <button class="primary" type="submit" id="authSubmit">Entrar</button>
         <button type="button" class="secondary" id="switchAuth">Criar conta</button>
@@ -110,6 +100,7 @@ h1{font-size:30px}
   </div>
 </div>
 
+<!-- VISUALIZAR LEMBRANÇA -->
 <div class="modal" id="memoryModal">
   <div class="modal-content">
     <div class="eyebrow">Um instante no tempo</div>
@@ -124,6 +115,7 @@ h1{font-size:30px}
   </div>
 </div>
 
+<!-- ADICIONAR LEMBRANÇA -->
 <div class="modal" id="addModal">
   <div class="modal-content">
     <div class="eyebrow">Uma nova página da nossa história</div>
@@ -152,6 +144,7 @@ h1{font-size:30px}
   </div>
 </div>
 
+<!-- CRIAR ÁRVORE -->
 <div class="modal" id="treeModal">
   <div class="modal-content">
     <div class="eyebrow">Começo de uma história</div>
@@ -169,209 +162,873 @@ h1{font-size:30px}
     <div class="status" id="treeStatus"></div>
   </div>
 </div>
+
+<!-- CONVIDAR PESSOAS -->
+<div class="modal" id="inviteModal">
+  <div class="modal-content">
+    <div class="eyebrow">Uma história compartilhada</div>
+    <h2>Convidar alguém</h2>
+    <p>Digite o e-mail da pessoa. Ela precisa criar uma conta ou entrar com esse mesmo e-mail para aceitar o convite.</p>
+
+    <form id="inviteForm">
+      <input class="field" id="inviteEmailInput" type="email" placeholder="E-mail da pessoa" autocomplete="email" required>
+      <div class="actions">
+        <button class="primary" id="sendInviteButton" type="submit">Criar convite</button>
+        <button class="secondary" type="button" id="closeInvite">Fechar</button>
+      </div>
+    </form>
+
+    <div class="status" id="inviteStatus" role="status"></div>
+    <p class="small">O convite vale por 7 dias. A pessoa precisa entrar com o e-mail convidado para aceitar. Compartilhe o link somente com quem deseja incluir.</p>
+  </div>
+</div>
+
 <script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+/* =========================================================
+   CONFIGURAÇÃO DO SUPABASE
+========================================================= */
 
 const SUPABASE_URL = 'https://vdihzbafrpbfukmajlcn.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_SZleYEhYVIxAZanXeEgaiQ_tKnlvwoV';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_SZleYEhYVIxAZanXeEgaiQ_tKnlvwoV';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 const $ = id => document.getElementById(id);
+const setNotice = message => { $('notice').textContent = message; };
 const openModal = id => $(id).classList.add('open');
 const closeModal = id => $(id).classList.remove('open');
 
 let currentUser = null;
 let currentTree = null;
 let memories = [];
-let creatingAccount = false;
-let renderer, scene, camera, treeGroup;
-let photoCards = [];
-let animationId = null;
+let photos = [];
+let selectedFile = null;
+let authMode = 'login';
+let invitationInProgress = false;
 
-function status(id, message, error = false) {
-  const el = $(id);
-  if (!el) return;
-  el.textContent = message;
-  el.style.color = error ? '#ff7777' : '#d4bd94';
+let invitationToken = new URLSearchParams(location.search).get('invite');
+
+/* =========================================================
+   ÁRVORE 3D
+========================================================= */
+
+const host = $('scene');
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x050505);
+scene.fog = new THREE.FogExp2(0x050505, .035);
+
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, .1, 100);
+camera.position.set(0, 1.1, 12.5);
+camera.lookAt(0, 2.2, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.5;
+host.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, .8));
+
+const goldLight = new THREE.PointLight(0xffc875, 45, 13);
+goldLight.position.set(0, 3.5, 0);
+scene.add(goldLight);
+
+const backLight = new THREE.PointLight(0x5a8a80, 25, 15);
+backLight.position.set(0, 4, -3);
+scene.add(backLight);
+
+const tree = new THREE.Group();
+scene.add(tree);
+
+const bark = new THREE.MeshStandardMaterial({ color: 0x45372a, roughness: .85 });
+const darkBark = new THREE.MeshStandardMaterial({ color: 0x29231d, roughness: .9 });
+
+function branch(start, end, radius, material = bark) {
+  const a = new THREE.Vector3(...start);
+  const b = new THREE.Vector3(...end);
+  const direction = new THREE.Vector3().subVectors(b, a);
+
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius * .45, radius, direction.length(), 7),
+    material
+  );
+
+  mesh.position.copy(a).add(b).multiplyScalar(.5);
+  mesh.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    direction.normalize()
+  );
+
+  tree.add(mesh);
 }
 
-function escapeHTML(value = '') {
-  return String(value).replace(/[&<>"']/g, char => ({
-    '&':'&amp;', '<':'&lt;', '>':'&gt;',
-    '"':'&quot;', "'":'&#39;'
-  })[char]);
+branch([0,-2.2,0],[.15,.1,0],.43);
+branch([.15,.1,0],[-.15,1.5,0],.32);
+branch([-.15,1.5,0],[.1,2.8,0],.24);
+branch([.1,2.8,0],[-.1,4,0],.15);
+branch([-.1,4,0],[.35,4.9,0],.09);
+
+const limbs = [
+  [[0,.3,0],[1.1,1.1,.1],.22],
+  [[1.1,1.1,.1],[2.1,1.5,0],.14],
+  [[1.1,1.1,.1],[1.4,2.2,-.2],.11],
+  [[-.1,.6,0],[-1.1,1.3,.2],.2],
+  [[-1.1,1.3,.2],[-2,1.7,0],.12],
+  [[-1.1,1.3,.2],[-1.5,2.4,-.1],.1],
+  [[-.15,1.5,0],[.9,2.5,.1],.17],
+  [[.9,2.5,.1],[1.8,3,0],.1],
+  [[.9,2.5,.1],[.7,3.4,-.2],.09],
+  [[.1,2.8,0],[-.8,3.5,.1],.13],
+  [[-.8,3.5,.1],[-1.5,4,0],.08],
+  [[-.8,3.5,.1],[-.5,4.4,0],.07],
+  [[-.1,4,0],[.9,4.4,.1],.08],
+  [[.9,4.4,.1],[1.4,4.7,0],.05],
+  [[.15,0,0],[.7,-.7,.2],.17],
+  [[.7,-.7,.2],[1.6,-1.1,0],.1],
+  [[0,-.2,0],[-.8,-.8,0],.16],
+  [[-.8,-.8,0],[-1.6,-1.1,.1],.08]
+];
+
+limbs.forEach(l => branch(...l, darkBark));
+
+const leaves = new THREE.Group();
+tree.add(leaves);
+
+const leafMaterials = [
+  new THREE.MeshStandardMaterial({
+    color: 0x665b3d,
+    emissive: 0x98703b,
+    emissiveIntensity: .7,
+    roughness: .65
+  }),
+  new THREE.MeshStandardMaterial({
+    color: 0x4c6553,
+    emissive: 0x294e38,
+    emissiveIntensity: .8,
+    roughness: .8
+  }),
+  new THREE.MeshStandardMaterial({
+    color: 0x9a8053,
+    emissive: 0xc99a4d,
+    emissiveIntensity: 1.2,
+    roughness: .5
+  })
+];
+
+let seed = 19;
+
+function random() {
+  seed = (seed * 16807) % 2147483647;
+  return (seed - 1) / 2147483646;
 }
 
-function showNotice(message) {
-  $('notice').textContent = message;
+for (let i = 0; i < 270; i++) {
+  const angle = random() * Math.PI * 2;
+  const height = random() * 4.8;
+  const spread = Math.sin(height / 5.2 * Math.PI) * 2.1 + .2;
+  const x = Math.cos(angle) * spread * (.3 + random() * .7);
+  const z = Math.sin(angle) * spread * .6;
+  const y = height - .3;
+
+  const leaf = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(.045 + random() * .085, 0),
+    leafMaterials[Math.floor(random() * leafMaterials.length)]
+  );
+
+  leaf.position.set(x, y, z);
+  leaf.rotation.set(random() * 3, random() * 3, random() * 3);
+  leaf.userData.phase = random() * Math.PI * 2;
+
+  leaves.add(leaf);
 }
 
-function updateCounter() {
-  $('counter').textContent =
-    `${memories.length} ${memories.length === 1 ? 'LEMBRANÇA' : 'MEMÓRIAS'}`;
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(5, 64),
+  new THREE.MeshBasicMaterial({ color: 0x080907, transparent: true, opacity: .8 })
+);
+
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -2.25;
+scene.add(ground);
+
+const dustGeometry = new THREE.BufferGeometry();
+const dustPositions = [];
+
+for (let i = 0; i < 500; i++) {
+  dustPositions.push((random() - .5) * 14, random() * 9 - 2, (random() - .5) * 8);
 }
 
-function refreshHeader() {
-  $('accountButton').textContent = currentUser
-    ? 'Minha conta'
-    : 'Entrar';
-  $('pageTitle').textContent = currentTree?.name || 'Nossa História';
-  $('openAdd').textContent = currentUser
-    ? '+  GUARDAR UMA LEMBRANÇA'
-    : 'ENTRAR PARA GUARDAR LEMBRANÇAS';
+dustGeometry.setAttribute(
+  'position',
+  new THREE.Float32BufferAttribute(dustPositions, 3)
+);
+
+const dust = new THREE.Points(
+  dustGeometry,
+  new THREE.PointsMaterial({
+    color: 0xc5a777,
+    size: .025,
+    transparent: true,
+    opacity: .65
+  })
+);
+
+scene.add(dust);
+
+const photoGroup = new THREE.Group();
+scene.add(photoGroup);
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+
+const demoColors = [
+  ['#d8c6ad','#574a3c'],
+  ['#9caaa0','#394940'],
+  ['#d5c4b0','#766254'],
+  ['#b6b8b4','#424744'],
+  ['#c6ad8c','#68503d'],
+  ['#a8aaa3','#50534c']
+];
+
+function makeDemoTexture(index) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 384;
+
+  const ctx = canvas.getContext('2d');
+  const colors = demoColors[index % demoColors.length];
+  const gradient = ctx.createLinearGradient(0, 0, 512, 384);
+
+  gradient.addColorStop(0, colors[0]);
+  gradient.addColorStop(1, colors[1]);
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 512, 384);
+
+  ctx.fillStyle = '#20231f';
+  ctx.beginPath();
+  ctx.moveTo(0,300);
+  ctx.lineTo(110,130);
+  ctx.lineTo(205,270);
+  ctx.lineTo(315,100);
+  ctx.lineTo(512,290);
+  ctx.lineTo(512,384);
+  ctx.lineTo(0,384);
+  ctx.fill();
+
+  ctx.fillStyle = '#171915';
+  ctx.beginPath();
+  ctx.arc(256,165,36,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillRect(240,198,32,105);
+
+  ctx.fillStyle = '#f3e5ce';
+  ctx.font = 'italic 23px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillText('um momento nosso',256,350);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  return texture;
 }
 
-function openAuth() {
-  status('authStatus', '');
-  openModal('authModal');
+function removePhotos() {
+  for (const p of photos) {
+    photoGroup.remove(p);
+    p.geometry.dispose();
+    p.material.map?.dispose();
+    p.material.dispose();
+  }
+
+  photos = [];
 }
 
-$('accountButton').addEventListener('click', () => {
-  if (currentUser) {
-    const leave = confirm('Deseja sair da sua conta?');
-    if (leave) supabase.auth.signOut();
-  } else {
-    openAuth();
+function rebuildPhotos() {
+  removePhotos();
+
+  const count = memories.length;
+
+  if (!count) {
+    $('counter').textContent = '0 MEMÓRIAS';
+    return;
+  }
+
+  memories.forEach((m, index) => {
+    const angle = index / count * Math.PI * 2;
+    const radius = count === 1 ? 2.6 : 3.2;
+    const y = 1.1 + Math.sin(angle * 2) * .65;
+
+    const geometry = new THREE.PlaneGeometry(1.05, .79);
+    let texture;
+
+    if (m.url && m.media_type !== 'video') {
+      texture = new THREE.TextureLoader().load(m.url);
+      texture.colorSpace = THREE.SRGBColorSpace;
+    } else {
+      texture = makeDemoTexture(index);
+    }
+
+    const material = new THREE.MeshBasicMaterial({
+      map: texture,
+      side: THREE.DoubleSide
+    });
+
+    const card = new THREE.Mesh(geometry, material);
+    card.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+    card.lookAt(0, y, 0);
+    card.userData.memoryIndex = index;
+
+    photoGroup.add(card);
+    photos.push(card);
+  });
+
+  $('counter').textContent = String(count).padStart(2, '0') + ' MEMÓRIAS';
+}
+
+/* =========================================================
+   VISUALIZAR LEMBRANÇAS
+========================================================= */
+
+function showMemory(index) {
+  const m = memories[index];
+  if (!m) return;
+
+  $('memoryTitle').textContent = m.title;
+  $('memoryDescription').textContent = m.description || 'Um momento guardado para sempre.';
+  $('memoryDate').textContent = m.memory_date
+    ? new Date(m.memory_date + 'T12:00:00').toLocaleDateString('pt-BR')
+    : '';
+
+  const img = $('memoryImage');
+  const vid = $('memoryVideo');
+
+  img.classList.add('hidden');
+  vid.classList.add('hidden');
+  vid.pause();
+
+  if (m.media_type === 'video' && m.url) {
+    vid.src = m.url;
+    vid.classList.remove('hidden');
+  } else if (m.url) {
+    img.src = m.url;
+    img.classList.remove('hidden');
+  }
+
+  openModal('memoryModal');
+}
+
+/* =========================================================
+   CONTROLES DA INTERFACE
+========================================================= */
+
+let dragging = false;
+let previousX = 0;
+let previousY = 0;
+let rotationVelocity = 0;
+let touchMoved = false;
+
+renderer.domElement.addEventListener('pointerdown', e => {
+  dragging = true;
+  touchMoved = false;
+  previousX = e.clientX;
+  previousY = e.clientY;
+  renderer.domElement.setPointerCapture(e.pointerId);
+});
+
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!dragging) return;
+
+  const dx = e.clientX - previousX;
+  const dy = e.clientY - previousY;
+
+  if (Math.abs(dx) + Math.abs(dy) > 2) touchMoved = true;
+
+  rotationVelocity = dx * .004;
+  photoGroup.rotation.y += rotationVelocity;
+  tree.rotation.y += dx * .0015;
+  camera.position.y = THREE.MathUtils.clamp(camera.position.y + dy * .008, 0, 3);
+
+  previousX = e.clientX;
+  previousY = e.clientY;
+});
+
+renderer.domElement.addEventListener('pointerup', e => {
+  dragging = false;
+
+  if (renderer.domElement.hasPointerCapture(e.pointerId)) {
+    renderer.domElement.releasePointerCapture(e.pointerId);
   }
 });
 
-$('closeAuth').addEventListener('click', () => closeModal('authModal'));
-
-$('switchAuth').addEventListener('click', () => {
-  creatingAccount = !creatingAccount;
-  $('authHeading').textContent = creatingAccount
-    ? 'Criar minha conta'
-    : 'Entrar na sua história';
-  $('authSubmit').textContent = creatingAccount
-    ? 'Criar conta'
-    : 'Entrar';
-  $('switchAuth').textContent = creatingAccount
-    ? 'Já tenho conta'
-    : 'Criar conta';
-  $('passwordInput').autocomplete = creatingAccount
-    ? 'new-password'
-    : 'current-password';
-  status('authStatus', '');
+renderer.domElement.addEventListener('pointercancel', () => {
+  dragging = false;
 });
 
-$('authForm').addEventListener('submit', async event => {
-  event.preventDefault();
+renderer.domElement.addEventListener('click', e => {
+  if (touchMoved) return;
+
+  const r = renderer.domElement.getBoundingClientRect();
+
+  pointer.x = (e.clientX - r.left) / r.width * 2 - 1;
+  pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+
+  const hits = raycaster.intersectObjects(photos);
+
+  if (hits.length) {
+    showMemory(hits[0].object.userData.memoryIndex);
+  }
+});
+
+$('closeMemory').onclick = () => {
+  $('memoryVideo').pause();
+  closeModal('memoryModal');
+};
+
+$('openAdd').onclick = () => {
+  if (!currentUser) {
+    openModal('authModal');
+    setNotice('Entre ou crie uma conta para guardar lembranças privadas.');
+    return;
+  }
+
+  if (!currentTree) {
+    openModal('treeModal');
+    return;
+  }
+
+  openModal('addModal');
+};
+
+$('closeAuth').onclick = () => closeModal('authModal');
+
+$('cancelAdd').onclick = () => {
+  closeModal('addModal');
+  $('saveStatus').textContent = '';
+};
+
+$('cancelTree').onclick = () => closeModal('treeModal');
+
+$('accountButton').onclick = async () => {
+  if (currentUser) {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      setNotice(error.message);
+      return;
+    }
+
+    currentUser = null;
+    currentTree = null;
+    memories = [];
+    rebuildPhotos();
+
+    $('inviteButton').classList.add('hidden');
+    $('accountButton').textContent = 'Entrar';
+    $('pageTitle').textContent = 'Nossa História';
+    $('openAdd').textContent = '+  GUARDAR UMA LEMBRANÇA';
+
+    setNotice('Você saiu da sua conta. Entre para acessar suas lembranças.');
+  } else {
+    openModal('authModal');
+  }
+};
+
+/* =========================================================
+   CONVITES
+========================================================= */
+
+$('inviteButton').onclick = () => {
+  if (!currentUser || !currentTree) return;
+
+  $('inviteStatus').textContent = '';
+  $('inviteEmailInput').value = '';
+  openModal('inviteModal');
+};
+
+$('closeInvite').onclick = () => closeModal('inviteModal');
+
+/*
+ * Aceita um convite depois que a pessoa estiver autenticada.
+ * A função SQL verifica o e-mail, a validade e o estado do convite.
+ */
+
+async function processInvitationLink() {
+  if (!currentUser || !invitationToken || invitationInProgress) return false;
+
+  invitationInProgress = true;
+  setNotice('Verificando convite...');
+
+  try {
+    const { error } = await supabase.rpc('accept_tree_invitation', {
+      invitation_token: invitationToken
+    });
+
+    if (error) {
+      setNotice('Não foi possível aceitar o convite: ' + error.message);
+      return false;
+    }
+
+    invitationToken = null;
+    history.replaceState({}, '', location.origin + location.pathname);
+
+    setNotice('Convite aceito! Carregando a árvore compartilhada.');
+    return true;
+  } finally {
+    invitationInProgress = false;
+  }
+}
+
+/* Cria um convite com validade de sete dias. */
+
+$('inviteForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  if (!currentUser || !currentTree) {
+    $('inviteStatus').textContent = 'Entre e abra uma árvore antes de convidar.';
+    return;
+  }
+
+  const email = $('inviteEmailInput').value.trim().toLowerCase();
+
+  if (email === String(currentUser.email || '').toLowerCase()) {
+    $('inviteStatus').textContent = 'Esse é o e-mail da sua própria conta.';
+    return;
+  }
+
+  const button = $('sendInviteButton');
+  button.disabled = true;
+  $('inviteStatus').textContent = 'Criando convite...';
+
+  try {
+    const token = crypto.randomUUID() + '-' + crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { error } = await supabase
+      .from('tree_invitations')
+      .insert({
+        tree_id: currentTree.id,
+        invited_email: email,
+        invited_by: currentUser.id,
+        token,
+        status: 'pending',
+        expires_at: expiresAt
+      });
+
+    if (error) throw error;
+
+    const link = location.origin + location.pathname + '?invite=' + encodeURIComponent(token);
+
+    $('inviteStatus').textContent = 'Convite criado para ' + email + '. Válido por 7 dias.';
+
+    const copyButton = document.createElement('button');
+    copyButton.className = 'primary';
+    copyButton.type = 'button';
+    copyButton.style.marginTop = '10px';
+    copyButton.textContent = 'Copiar link do convite';
+
+    copyButton.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(link);
+        copyButton.textContent = 'Link copiado!';
+      } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = link;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+        copyButton.textContent = 'Link copiado!';
+      }
+    };
+
+    $('inviteStatus').appendChild(document.createElement('br'));
+    $('inviteStatus').appendChild(copyButton);
+
+    const shareButton = document.createElement('button');
+    shareButton.className = 'primary';
+    shareButton.type = 'button';
+    shareButton.style.marginTop = '10px';
+    shareButton.textContent = 'Compartilhar convite';
+
+    shareButton.onclick = async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Convite para nossa Árvore de Lembranças',
+            text: 'Você foi convidado para compartilhar uma árvore de lembranças comigo.',
+            url: link
+          });
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            $('inviteStatus').textContent = 'Não foi possível compartilhar: ' + err.message;
+          }
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(link);
+          shareButton.textContent = 'Link copiado!';
+        } catch {
+          $('inviteStatus').textContent = 'Use o botão de copiar link para compartilhar o convite.';
+        }
+      }
+    };
+
+    $('inviteStatus').appendChild(document.createElement('br'));
+    $('inviteStatus').appendChild(shareButton);
+
+  } catch (err) {
+    $('inviteStatus').textContent = 'Não foi possível criar o convite: ' + err.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+
+/* =========================================================
+   AUTENTICAÇÃO
+========================================================= */
+
+$('switchAuth').onclick = () => {
+  authMode = authMode === 'login' ? 'signup' : 'login';
+
+  $('authHeading').textContent = authMode === 'login'
+    ? 'Entrar na sua história'
+    : 'Criar sua conta';
+
+  $('authSubmit').textContent = authMode === 'login'
+    ? 'Entrar'
+    : 'Criar conta';
+
+  $('switchAuth').textContent = authMode === 'login'
+    ? 'Criar conta'
+    : 'Já tenho conta';
+
+  $('passwordInput').autocomplete = authMode === 'login'
+    ? 'current-password'
+    : 'new-password';
+
+  $('authStatus').textContent = '';
+};
+
+function humanError(err) {
+  const msg = String(err?.message || err);
+
+  if (/Invalid login credentials/i.test(msg)) {
+    return 'E-mail ou senha incorretos.';
+  }
+
+  if (/Email not confirmed/i.test(msg)) {
+    return 'Confirme seu e-mail antes de entrar.';
+  }
+
+  if (/already registered/i.test(msg)) {
+    return 'Este e-mail já tem uma conta. Tente entrar.';
+  }
+
+  return msg;
+}
+
+$('authForm').addEventListener('submit', async e => {
+  e.preventDefault();
 
   const email = $('emailInput').value.trim();
   const password = $('passwordInput').value;
 
   $('authSubmit').disabled = true;
-  status('authStatus', 'Conectando...');
+  $('authStatus').textContent = 'Conectando...';
 
   try {
-    if (creatingAccount) {
-      const { data, error } = await supabase.auth.signUp({
+    let result;
+
+    if (authMode === 'signup') {
+      result = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: window.location.href.split('#')[0]
+          emailRedirectTo: location.origin + location.pathname
         }
       });
-
-      if (error) throw error;
-
-      if (data.session) {
-        status('authStatus', 'Conta criada! Carregando sua árvore...');
-      } else {
-        status(
-          'authStatus',
-          'Conta criada! Confira seu e-mail para confirmar o cadastro.'
-        );
-      }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({
+      result = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      if (error) throw error;
-
-      closeModal('authModal');
-      showNotice('Carregando suas lembranças...');
     }
-  } catch (error) {
-    status('authStatus', error.message || 'Não foi possível entrar.', true);
+
+    if (result.error) throw result.error;
+
+    if (authMode === 'signup' && !result.data.session) {
+      $('authStatus').textContent =
+        'Conta criada. Confira seu e-mail para confirmar o cadastro. Depois, entre e abra novamente o link do convite, se recebeu um.';
+      return;
+    }
+
+    currentUser = result.data.user;
+    $('accountButton').textContent = 'Sair';
+
+    closeModal('authModal');
+
+    await loadUserData();
+
+  } catch (err) {
+    $('authStatus').textContent = humanError(err);
   } finally {
     $('authSubmit').disabled = false;
   }
 });
 
+/* =========================================================
+   CARREGAR ÁRVORE E LEMBRANÇAS
+========================================================= */
+
 async function loadUserData() {
   const { data: { user } } = await supabase.auth.getUser();
-  currentUser = user || null;
+
+  currentUser = user || currentUser;
 
   if (!currentUser) {
     currentTree = null;
     memories = [];
-    updateCounter();
-    refreshHeader();
-    showNotice('Entre na sua conta para carregar suas lembranças privadas.');
+    rebuildPhotos();
+
+    $('inviteButton').classList.add('hidden');
+    $('accountButton').textContent = 'Entrar';
+    $('openAdd').textContent = 'ENTRAR PARA GUARDAR LEMBRANÇAS';
+
+    setNotice('Entre na sua conta para carregar suas lembranças privadas.');
     return;
   }
 
-  try {
-    const { data, error } = await supabase
-      .from('tree_members')
-      .select('tree_id, role, trees(id, name, owner_id, level, experience)')
-      .eq('user_id', currentUser.id);
+  $('accountButton').textContent = 'Sair';
+  $('openAdd').textContent = '+  GUARDAR UMA LEMBRANÇA';
 
-    if (error) throw error;
+  /*
+   * Se existe um convite no endereço, tenta aceitá-lo antes
+   * de buscar as árvores às quais a pessoa pertence.
+   */
 
-    const memberships = (data || [])
-      .map(item => ({
-        role: item.role,
-        tree: Array.isArray(item.trees) ? item.trees[0] : item.trees
-      }))
-      .filter(item => item.tree);
+  if (invitationToken) {
+    const accepted = await processInvitationLink();
 
-    if (memberships.length === 0) {
-      currentTree = null;
-      memories = [];
-      refreshHeader();
-      updateCounter();
-      showNotice('Crie sua primeira árvore para começar a guardar lembranças.');
+    if (!accepted) {
       closeModal('authModal');
-      openModal('treeModal');
       return;
     }
-
-    const savedTreeId = localStorage.getItem('memory-tree-id');
-    const chosen = memberships.find(item => item.tree.id === savedTreeId)
-      || memberships[0];
-
-    currentTree = chosen.tree;
-    localStorage.setItem('memory-tree-id', currentTree.id);
-
-    refreshHeader();
-    closeModal('authModal');
-    await loadMemories();
-  } catch (error) {
-    showNotice('Erro ao carregar sua árvore. Confira as permissões do Supabase.');
-    console.error(error);
   }
-}
 
-async function createTree(name) {
-  if (!currentUser) {
-    openAuth();
+  setNotice('Carregando sua árvore privada...');
+
+  const { data: members, error: memberError } = await supabase
+    .from('tree_members')
+    .select('tree_id, role, trees(id, name, owner_id, level, experience)')
+    .eq('user_id', currentUser.id);
+
+  if (memberError) {
+    setNotice('Não foi possível carregar sua árvore: ' + memberError.message);
     return;
   }
 
-  status('treeStatus', 'Criando sua árvore...');
+  const availableTrees = (members || [])
+    .map(item => item.trees)
+    .filter(Boolean);
+
+  if (!availableTrees.length) {
+    currentTree = null;
+    memories = [];
+    rebuildPhotos();
+
+    $('inviteButton').classList.add('hidden');
+
+    closeModal('authModal');
+    openModal('treeModal');
+
+    setNotice('Crie sua primeira árvore privada.');
+    return;
+  }
+
+  /*
+   * Prioriza a árvore que acabou de ser aceita pelo convite.
+   * Caso contrário, seleciona a primeira árvore disponível.
+   */
+
+  currentTree = availableTrees[0];
+
+  $('pageTitle').textContent = currentTree.name || 'Nossa História';
+
+  $('inviteButton').classList.toggle(
+    'hidden',
+    !currentUser || !currentTree
+  );
+
+  await loadMemories();
+
+  setNotice('Sua árvore está sincronizada e privada.');
+  closeModal('authModal');
+}
+
+async function loadMemories() {
+  if (!currentTree) return;
+
+  const { data, error } = await supabase
+    .from('memories')
+    .select('*')
+    .eq('tree_id', currentTree.id)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    setNotice('Não foi possível carregar as lembranças: ' + error.message);
+    return;
+  }
+
+  for (const memory of data || []) {
+    memory.url = null;
+
+    if (memory.storage_path) {
+      const { data: signed, error: signError } = await supabase
+        .storage
+        .from('memory-media')
+        .createSignedUrl(memory.storage_path, 3600);
+
+      if (!signError && signed) {
+        memory.url = signed.signedUrl;
+      }
+    }
+  }
+
+  memories = data || [];
+  rebuildPhotos();
+
+  $('counter').textContent =
+    String(memories.length).padStart(2, '0') + ' MEMÓRIAS';
+}
+
+/* =========================================================
+   CRIAR ÁRVORE
+========================================================= */
+
+$('treeForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  if (!currentUser) return;
+
+  $('treeStatus').textContent = 'Criando árvore...';
 
   try {
-    const { data: tree, error } = await supabase
+    const name = $('treeNameInput').value.trim() || 'Nossa História';
+
+    const { data: treeData, error } = await supabase
       .from('trees')
       .insert({
         name,
-        owner_id: currentUser.id,
-        level: 1,
-        experience: 0
+        owner_id: currentUser.id
       })
       .select()
       .single();
@@ -381,527 +1038,217 @@ async function createTree(name) {
     const { error: memberError } = await supabase
       .from('tree_members')
       .insert({
-        tree_id: tree.id,
+        tree_id: treeData.id,
         user_id: currentUser.id,
         role: 'owner'
       });
 
     if (memberError) throw memberError;
 
-    currentTree = tree;
-    localStorage.setItem('memory-tree-id', tree.id);
-    closeModal('treeModal');
-    refreshHeader();
-    showNotice('Sua árvore nasceu! Guarde a primeira lembrança.');
-    await loadMemories();
-  } catch (error) {
-    status('treeStatus', error.message || 'Não foi possível criar a árvore.', true);
-  }
-}
-
-$('treeForm').addEventListener('submit', async event => {
-  event.preventDefault();
-  const name = $('treeNameInput').value.trim();
-  if (!name) return;
-  await createTree(name);
-});
-
-$('cancelTree').addEventListener('click', () => {
-  closeModal('treeModal');
-});
-
-async function loadMemories() {
-  if (!currentUser || !currentTree) return;
-
-  showNotice('Reunindo suas lembranças...');
-
-  try {
-    const { data, error } = await supabase
-      .from('memories')
-      .select('*')
-      .eq('tree_id', currentTree.id)
-      .order('memory_date', { ascending: true });
-
-    if (error) throw error;
-
+    currentTree = treeData;
     memories = [];
+    rebuildPhotos();
 
-    for (const item of (data || [])) {
-      let mediaUrl = '';
+    $('pageTitle').textContent = treeData.name;
+    $('inviteButton').classList.remove('hidden');
 
-      if (item.storage_path) {
-        const { data: signed, error: signedError } = await supabase
-          .storage
-          .from('memory-media')
-          .createSignedUrl(item.storage_path, 3600);
+    closeModal('treeModal');
 
-        if (!signedError && signed) {
-          mediaUrl = signed.signedUrl;
-        }
-      }
+    setNotice('Sua árvore nasceu. Guarde a primeira lembrança!');
 
-      memories.push({
-        ...item,
-        mediaUrl
-      });
-    }
-
-    updateCounter();
-    refreshHeader();
-    renderMemoryCards();
-
-    showNotice(memories.length
-      ? 'Arraste para explorar sua árvore de lembranças.'
-      : 'Sua árvore está pronta. Guarde a primeira lembrança!');
-  } catch (error) {
-    console.error(error);
-    showNotice('Não foi possível carregar as lembranças.');
+  } catch (err) {
+    $('treeStatus').textContent = 'Erro ao criar árvore: ' + err.message;
   }
-}
-
-function renderMemoryCards() {
-  if (!treeGroup) return;
-
-  photoCards.forEach(card => treeGroup.remove(card));
-  photoCards = [];
-
-  const count = Math.max(memories.length, 1);
-
-  memories.forEach((memory, index) => {
-    const angle = index * 2.39996;
-    const radius = 2.0 + (index % 3) * 0.6;
-    const x = Math.cos(angle) * radius;
-    const y = 1.5 + (index % 5) * 0.7;
-    const z = Math.sin(angle) * radius;
-
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const card = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.9, 0.68),
-      new THREE.MeshBasicMaterial({
-        color: 0xc9b99b,
-        side: THREE.DoubleSide
-      })
-    );
-
-    card.userData.memory = memory;
-    group.add(card);
-    group.userData.memory = memory;
-
-    treeGroup.add(group);
-    photoCards.push(group);
-  });
-}
-
-$('openAdd').addEventListener('click', () => {
-  if (!currentUser) {
-    openAuth();
-    return;
-  }
-
-  if (!currentTree) {
-    openModal('treeModal');
-    return;
-  }
-
-  $('memoryForm').reset();
-  $('fileStatus').textContent = '';
-  $('saveStatus').textContent = '';
-  $('dateInput').value = new Date().toISOString().slice(0, 10);
-  openModal('addModal');
 });
 
-$('cancelAdd').addEventListener('click', () => closeModal('addModal'));
+/* =========================================================
+   ENVIO DE FOTOS E VÍDEOS
+========================================================= */
 
-$('fileInput').addEventListener('change', () => {
-  const file = $('fileInput').files[0];
-  if (!file) {
-    status('fileStatus', '');
-    return;
-  }
+$('fileInput').addEventListener('change', e => {
+  selectedFile = e.target.files?.[0] || null;
 
-  const limit = 50 * 1024 * 1024;
+  $('fileStatus').textContent = selectedFile
+    ? selectedFile.name + ' (' + (selectedFile.size / 1024 / 1024).toFixed(1) + ' MB)'
+    : '';
 
-  if (file.size > limit) {
+  if (selectedFile && selectedFile.size > 50 * 1024 * 1024) {
+    $('fileStatus').textContent = 'Arquivo acima de 50 MB. Escolha um arquivo menor.';
     $('fileInput').value = '';
-    status('fileStatus', 'O arquivo precisa ter até 50 MB.', true);
-    return;
+    selectedFile = null;
   }
-
-  if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-    $('fileInput').value = '';
-    status('fileStatus', 'Escolha uma imagem ou um vídeo.', true);
-    return;
-  }
-
-  status('fileStatus', `${file.name} — pronto para enviar.`);
 });
 
-$('memoryForm').addEventListener('submit', async event => {
-  event.preventDefault();
+$('memoryForm').addEventListener('submit', async e => {
+  e.preventDefault();
 
   if (!currentUser || !currentTree) {
-    status('saveStatus', 'Entre e selecione uma árvore primeiro.', true);
+    setNotice('Entre e crie ou aceite uma árvore primeiro.');
     return;
   }
 
-  const file = $('fileInput').files[0];
-
-  if (!file) {
-    status('saveStatus', 'Escolha uma foto ou vídeo.', true);
+  if (!selectedFile) {
+    $('saveStatus').textContent = 'Escolha uma foto ou vídeo.';
     return;
   }
 
-  if (file.size > 50 * 1024 * 1024) {
-    status('saveStatus', 'O arquivo excede o limite de 50 MB.', true);
+  if (selectedFile.size > 50 * 1024 * 1024) {
+    $('saveStatus').textContent = 'O limite por arquivo é 50 MB.';
     return;
   }
+
+  const title = $('titleInput').value.trim();
+  if (!title) return;
 
   const button = $('saveMemoryButton');
   button.disabled = true;
-  status('saveStatus', 'Enviando sua lembrança...');
-
-  const extension = file.name.includes('.')
-    ? file.name.split('.').pop().toLowerCase()
-    : 'bin';
-
-  const path = `${currentTree.id}/${currentUser.id}/${crypto.randomUUID()}.${extension}`;
+  $('saveStatus').textContent = 'Enviando arquivo com segurança...';
 
   try {
-    const { error: uploadError } = await supabase.storage
+    const ext = (selectedFile.name.split('.').pop() || 'bin')
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .slice(0, 10) || 'bin';
+
+    const path = `${currentTree.id}/${currentUser.id}/${crypto.randomUUID()}.${ext}`;
+
+    const { error: uploadError } = await supabase
+      .storage
       .from('memory-media')
-      .upload(path, file, {
+      .upload(path, selectedFile, {
         cacheControl: '3600',
         upsert: false,
-        contentType: file.type || undefined
+        contentType: selectedFile.type || 'application/octet-stream'
       });
 
     if (uploadError) throw uploadError;
 
-    const { error: insertError } = await supabase
+    const isVideo = selectedFile.type.startsWith('video/');
+
+    const { data, error } = await supabase
       .from('memories')
       .insert({
         tree_id: currentTree.id,
         created_by: currentUser.id,
-        title: $('titleInput').value.trim(),
+        title,
         description: $('descriptionInput').value.trim(),
-        memory_date: $('dateInput').value || new Date().toISOString().slice(0, 10),
-        media_type: file.type.startsWith('video/') ? 'video' : 'photo',
+        memory_date: $('dateInput').value || null,
+        media_type: isVideo ? 'video' : 'photo',
         storage_path: path,
-        experience_awarded: 10
-      });
+        experience_awarded: 0
+      })
+      .select()
+      .single();
 
-    if (insertError) {
+    if (error) {
       await supabase.storage.from('memory-media').remove([path]);
-      throw insertError;
+      throw error;
     }
 
+    const { data: signed } = await supabase
+      .storage
+      .from('memory-media')
+      .createSignedUrl(path, 3600);
+
+    data.url = signed?.signedUrl || null;
+
+    memories.push(data);
+    rebuildPhotos();
+
+    e.target.reset();
+    selectedFile = null;
+
+    $('fileStatus').textContent = '';
+    $('saveStatus').textContent = '';
+
     closeModal('addModal');
-    showNotice('Lembrança guardada com carinho. ✨');
-    await loadMemories();
-  } catch (error) {
-    console.error(error);
-    status('saveStatus', error.message || 'Erro ao salvar. Tente novamente.', true);
+
+    setNotice('Sua lembrança foi salva na nuvem.');
+
+  } catch (err) {
+    $('saveStatus').textContent =
+      'Não foi possível salvar: ' + err.message +
+      ' — confira se o bucket e as políticas de armazenamento foram configurados.';
   } finally {
     button.disabled = false;
   }
 });
 
-$('closeMemory').addEventListener('click', () => {
-  $('memoryVideo').pause();
-  closeModal('memoryModal');
-});
-
-function showMemory(memory) {
-  $('memoryTitle').textContent = memory.title || 'Nossa lembrança';
-  $('memoryDescription').textContent = memory.description || '';
-  $('memoryDate').textContent = memory.memory_date || '';
-
-  $('memoryImage').classList.add('hidden');
-  $('memoryVideo').classList.add('hidden');
-  $('memoryImage').removeAttribute('src');
-  $('memoryVideo').removeAttribute('src');
-
-  if (memory.media_type === 'video') {
-    $('memoryVideo').src = memory.mediaUrl;
-    $('memoryVideo').classList.remove('hidden');
-  } else {
-    $('memoryImage').src = memory.mediaUrl;
-    $('memoryImage').classList.remove('hidden');
-  }
-
-  openModal('memoryModal');
-}
-
-$('scene').addEventListener('click', event => {
-  if (!camera || !renderer) return;
-
-  const rect = renderer.domElement.getBoundingClientRect();
-  const pointer = new THREE.Vector2(
-    ((event.clientX - rect.left) / rect.width) * 2 - 1,
-    -((event.clientY - rect.top) / rect.height) * 2 + 1
-  );
-
-  const raycaster = new THREE.Raycaster();
-  raycaster.setFromCamera(pointer, camera);
-
-  const hits = raycaster.intersectObjects(photoCards, true);
-
-  if (hits.length) {
-    const memory = hits[0].object.userData.memory
-      || hits[0].object.parent?.userData.memory;
-    if (memory) showMemory(memory);
-  }
-});
+/* =========================================================
+   SESSÃO E INICIALIZAÇÃO
+========================================================= */
 
 supabase.auth.onAuthStateChange((_event, session) => {
-  currentUser = session?.user || null;
-  setTimeout(() => loadUserData(), 0);
+  if (session?.user) {
+    currentUser = session.user;
+    $('accountButton').textContent = 'Sair';
+
+    setTimeout(() => {
+      loadUserData();
+    }, 0);
+  } else {
+    currentUser = null;
+    currentTree = null;
+    memories = [];
+    rebuildPhotos();
+
+    $('inviteButton').classList.add('hidden');
+    $('accountButton').textContent = 'Entrar';
+    $('openAdd').textContent = 'ENTRAR PARA GUARDAR LEMBRANÇAS';
+  }
 });
 
-$('dateInput').value = new Date().toISOString().slice(0, 10);
-refreshHeader();
-  // ÁRVORE 3D
-function initTree() {
-  const container = $('scene');
+const { data: { session } } = await supabase.auth.getSession();
 
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x050505);
-  scene.fog = new THREE.FogExp2(0x050505, 0.035);
+if (session?.user) {
+  currentUser = session.user;
+  $('accountButton').textContent = 'Sair';
+  await loadUserData();
+} else {
+  memories = [];
+  rebuildPhotos();
 
-  camera = new THREE.PerspectiveCamera(
-    48,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    100
-  );
-
-  camera.position.set(0, 3.5, 13);
-  camera.lookAt(0, 2.3, 0);
-
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: false
-  });
-
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  container.appendChild(renderer.domElement);
-
-  scene.add(new THREE.AmbientLight(0xffffff, 1.7));
-
-  const light = new THREE.PointLight(0xd7a65c, 90, 30);
-  light.position.set(3, 7, 5);
-  scene.add(light);
-
-  const redLight = new THREE.PointLight(0x8b1825, 45, 20);
-  redLight.position.set(-5, 3, -3);
-  scene.add(redLight);
-
-  treeGroup = new THREE.Group();
-  scene.add(treeGroup);
-
-  // Tronco
-  const trunkMaterial = new THREE.MeshStandardMaterial({
-    color: 0x35261a,
-    roughness: 0.9
-  });
-
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.22, 0.48, 4.2, 10),
-    trunkMaterial
-  );
-
-  trunk.position.y = 1.9;
-  treeGroup.add(trunk);
-
-  // Galhos
-  for (let i = 0; i < 13; i++) {
-    const startY = 1.0 + i * 0.22;
-    const angle = i * 2.39996;
-    const length = 1.1 + (i % 4) * 0.25;
-
-    const branch = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.035, 0.11, length, 7),
-      trunkMaterial
-    );
-
-    branch.position.set(
-      Math.cos(angle) * length * 0.35,
-      startY + length * 0.35,
-      Math.sin(angle) * length * 0.35
-    );
-
-    branch.rotation.z = Math.cos(angle) * 0.8;
-    branch.rotation.x = Math.sin(angle) * 0.8;
-
-    treeGroup.add(branch);
-  }
-
-  // Folhas luminosas
-  const leafMaterials = [
-    new THREE.MeshStandardMaterial({
-      color: 0x78633c,
-      emissive: 0x30210b,
-      roughness: 0.65
-    }),
-    new THREE.MeshStandardMaterial({
-      color: 0x9c8150,
-      emissive: 0x453014,
-      roughness: 0.6
-    }),
-    new THREE.MeshStandardMaterial({
-      color: 0x5e2024,
-      emissive: 0x260509,
-      roughness: 0.7
-    })
-  ];
-
-  const leafGeometry = new THREE.IcosahedronGeometry(0.15, 1);
-
-  for (let i = 0; i < 170; i++) {
-    const angle = i * 2.39996;
-    const spread = 0.7 + (i % 7) * 0.2;
-    const height = 2.6 + ((i * 37) % 45) / 10;
-
-    const leaf = new THREE.Mesh(
-      leafGeometry,
-      leafMaterials[i % leafMaterials.length]
-    );
-
-    leaf.position.set(
-      Math.cos(angle) * spread * (0.6 + height * 0.25),
-      height,
-      Math.sin(angle) * spread * (0.6 + height * 0.25)
-    );
-
-    leaf.scale.set(
-      0.65 + Math.random() * 0.6,
-      0.7 + Math.random() * 0.8,
-      0.65 + Math.random() * 0.6
-    );
-
-    treeGroup.add(leaf);
-  }
-
-  // Partículas douradas
-  const particleCount = 450;
-  const positions = new Float32Array(particleCount * 3);
-
-  for (let i = 0; i < particleCount; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * 13;
-    positions[i * 3 + 1] = Math.random() * 9;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
-  }
-
-  const particleGeometry = new THREE.BufferGeometry();
-  particleGeometry.setAttribute(
-    'position',
-    new THREE.BufferAttribute(positions, 3)
-  );
-
-  const particles = new THREE.Points(
-    particleGeometry,
-    new THREE.PointsMaterial({
-      color: 0xc9a86b,
-      size: 0.035,
-      transparent: true,
-      opacity: 0.75
-    })
-  );
-
-  scene.add(particles);
-
-  // Arrastar para girar a árvore
-  let dragging = false;
-  let previousX = 0;
-  let previousY = 0;
-  let rotationY = 0;
-  let rotationX = 0;
-
-  renderer.domElement.addEventListener('pointerdown', event => {
-    dragging = true;
-    previousX = event.clientX;
-    previousY = event.clientY;
-    renderer.domElement.setPointerCapture(event.pointerId);
-  });
-
-  renderer.domElement.addEventListener('pointermove', event => {
-    if (!dragging) return;
-
-    const dx = event.clientX - previousX;
-    const dy = event.clientY - previousY;
-
-    rotationY += dx * 0.005;
-    rotationX += dy * 0.002;
-
-    rotationX = Math.max(-0.35, Math.min(0.35, rotationX));
-
-    previousX = event.clientX;
-    previousY = event.clientY;
-  });
-
-  renderer.domElement.addEventListener('pointerup', () => {
-    dragging = false;
-  });
-
-  renderer.domElement.addEventListener('pointercancel', () => {
-    dragging = false;
-  });
-
-  function animate() {
-    animationId = requestAnimationFrame(animate);
-
-    if (!dragging) {
-      rotationY += 0.0015;
-    }
-
-    treeGroup.rotation.y +=
-      (rotationY - treeGroup.rotation.y) * 0.08;
-
-    treeGroup.rotation.x +=
-      (rotationX - treeGroup.rotation.x) * 0.08;
-
-    particles.rotation.y += 0.0004;
-
-    const time = performance.now() * 0.001;
-
-    treeGroup.children.forEach((child, index) => {
-      if (child.geometry?.type === 'IcosahedronGeometry') {
-        child.position.y += Math.sin(time + index) * 0.0008;
-      }
-    });
-
-    renderer.render(scene, camera);
-  }
-
-  animate();
-
-  window.addEventListener('resize', () => {
-    if (!camera || !renderer) return;
-
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  });
-}
-
-function showInitialState() {
-  refreshHeader();
-  updateCounter();
-  showNotice(
-    currentUser
-      ? 'Carregando suas lembranças...'
-      : 'Entre na sua conta para começar sua história.'
+  setNotice(
+    invitationToken
+      ? 'Você recebeu um convite! Entre ou crie uma conta com o e-mail convidado.'
+      : 'Entre na sua conta para carregar suas lembranças privadas.'
   );
 }
 
-initTree();
-showInitialState();
-loadUserData();
+/* =========================================================
+   ANIMAÇÃO CONTÍNUA
+========================================================= */
+
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const time = clock.getElapsedTime();
+
+  if (!dragging) {
+    photoGroup.rotation.y += .0009 + rotationVelocity * .94;
+    rotationVelocity *= .94;
+  }
+
+  leaves.children.forEach(leaf => {
+    leaf.position.y += Math.sin(time * .65 + leaf.userData.phase) * .0008;
+  });
+
+  dust.rotation.y = time * .009;
+  goldLight.intensity = 42 + Math.sin(time * 1.3) * 5;
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
+});
 </script>
 </body>
 </html>
